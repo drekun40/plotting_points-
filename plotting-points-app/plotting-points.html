@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Plot Points Practice</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
+      min-height: 100vh;
+    }
+    #canvas-container {
+      display: inline-block;
+      margin-top: 30px;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(67,198,172,0.25);
+      padding: 24px 24px 56px 24px;
+      position: relative;
+      max-width: 98vw;
+    }
+    #grid {
+      border: 3px solid #43c6ac;
+      background: #e0f7fa;
+      cursor: crosshair;
+      border-radius: 12px;
+      width: 98vw;
+      max-width: 600px;
+      height: 600px;
+      max-height: 98vw;
+      display: block;
+      margin: 0 auto;
+      touch-action: manipulation;
+    }
+    #info {
+      margin-top: 24px;
+      font-size: 1.4em;
+      color: #222;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 8px #43c6ac33;
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+    }
+    #scoreboard {
+      color: #43c6ac;
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 1.2em;
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      text-shadow: 0 2px 8px #43c6ac22;
+    }
+    #check-btn {
+      margin-top: 18px;
+      padding: 12px 32px;
+      font-size: 1.1em;
+      background: linear-gradient(90deg, #ff6f61 0%, #ffb300 100%);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: bold;
+      box-shadow: 0 4px 16px rgba(255,111,97,0.18);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      letter-spacing: 1px;
+    }
+    #check-btn:active {
+      transform: scale(0.97);
+    }
+    #check-btn:hover {
+      background: linear-gradient(90deg, #ffb300 0%, #ff6f61 100%);
+    }
+  </style>
+</head>
+<body>
+  <h1>Plot the Point!</h1>
+  <div id="scoreboard" style="margin-top:10px;font-size:1.1em;"></div>
+  <div id="info"></div>
+  <div id="canvas-container">
+  <canvas id="grid" width="600" height="600"></canvas>
+  </div>
+  <br>
+  <button id="check-btn">Check</button>
+  <script>
+    const canvas = document.getElementById('grid');
+    const ctx = canvas.getContext('2d');
+    const info = document.getElementById('info');
+    const checkBtn = document.getElementById('check-btn');
+  const size = 28; // pixels per unit (wider grid)
+  const offset = 300; // center of canvas (for 600x600)
+  let taskedPoint = randomPoint();
+  let userPoint = null;
+  let checked = false;
+  let score = 0;
+  let attempts = 0;
+  const scoreboard = document.getElementById('scoreboard');
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Grid lines
+      ctx.strokeStyle = '#b2ebf2';
+      ctx.lineWidth = 1;
+      for (let i = -10; i <= 10; i++) {
+        // Vertical
+        ctx.beginPath();
+        ctx.moveTo(offset + i * size, 0);
+        ctx.lineTo(offset + i * size, canvas.height);
+        ctx.stroke();
+        // Horizontal
+        ctx.beginPath();
+        ctx.moveTo(0, offset - i * size);
+        ctx.lineTo(canvas.width, offset - i * size);
+        ctx.stroke();
+      }
+      // Draw axes
+      ctx.strokeStyle = '#43c6ac';
+      ctx.lineWidth = 3;
+      // X axis
+      ctx.beginPath();
+      ctx.moveTo(0, offset);
+      ctx.lineTo(canvas.width, offset);
+      ctx.stroke();
+      // Y axis
+      ctx.beginPath();
+      ctx.moveTo(offset, 0);
+      ctx.lineTo(offset, canvas.height);
+      ctx.stroke();
+      // Draw ticks and labels
+      ctx.fillStyle = '#333';
+      ctx.font = '13px Segoe UI, Arial';
+      for (let i = -10; i <= 10; i++) {
+        if (i !== 0) {
+          // X labels
+          ctx.fillText(i, offset + i * size - 7, offset + 18);
+          // Y labels
+          ctx.fillText(i, offset - 30, offset - i * size + 5);
+        }
+      }
+      // Axis names
+      ctx.save();
+      ctx.font = 'bold 16px Segoe UI, Arial';
+      ctx.fillStyle = '#43c6ac';
+      // X axis name
+      ctx.fillText('X', canvas.width - 25, offset + 30);
+      // Y axis name (rotated)
+      ctx.translate(offset - 40, 30);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Y', 0, 0);
+      ctx.restore();
+    }
+
+    function drawPoints() {
+      if (userPoint) {
+        drawCircle(userPoint.x, userPoint.y, '#ffb300'); // User point: orange
+      }
+      if (checked) {
+        drawCircle(taskedPoint.x, taskedPoint.y, '#e74c3c'); // Correct: red
+      }
+    }
+
+    function drawCircle(x, y, color) {
+      ctx.beginPath();
+      ctx.arc(offset + x * size, offset - y * size, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function randomPoint() {
+      return {
+        x: Math.floor(Math.random() * 21) - 10,
+        y: Math.floor(Math.random() * 21) - 10
+      };
+    }
+
+    function updateInfo() {
+      info.textContent = `Plot the point (${taskedPoint.x}, ${taskedPoint.y})`;
+      scoreboard.textContent = `Score: ${score} | Attempts: ${attempts}`;
+    }
+
+    function redraw() {
+      drawGrid();
+      drawPoints();
+    }
+
+    canvas.addEventListener('click', function(e) {
+      if (checked) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.round((e.clientX - rect.left - offset) / size);
+      const y = Math.round((offset - (e.clientY - rect.top)) / size);
+      if (x >= -10 && x <= 10 && y >= -10 && y <= 10) {
+        userPoint = { x, y };
+        redraw();
+      }
+    });
+
+    checkBtn.addEventListener('click', function() {
+      if (!userPoint) return alert('Please plot a point first!');
+      checked = true;
+      attempts++;
+      redraw();
+      if (userPoint.x === taskedPoint.x && userPoint.y === taskedPoint.y) {
+        score++;
+        info.textContent = `Correct! (${taskedPoint.x}, ${taskedPoint.y})`;
+      } else {
+        info.textContent = `Try again! The correct point is shown in red.`;
+      }
+      scoreboard.textContent = `Score: ${score} | Attempts: ${attempts}`;
+      setTimeout(() => {
+        taskedPoint = randomPoint();
+        userPoint = null;
+        checked = false;
+        updateInfo();
+        redraw();
+      }, 2000);
+    });
+
+    updateInfo();
+    redraw();
+  </script>
+</body>
+</html>
